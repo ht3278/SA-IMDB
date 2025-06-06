@@ -2,7 +2,7 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.layers import (Input, Embedding, Conv1D, GlobalMaxPooling1D, Dense,
-                                    Dropout, Concatenate, BatchNormalization，
+                                    Dropout, Concatenate, BatchNormalization，SeparableConv1D, 
                                     Bidirectional, LSTM, Multiply)
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -473,41 +473,6 @@ st.markdown("""
     .stButton>button:hover {
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    /* 标签样式 */
-    .sentiment-tag {
-        display: inline-block;
-        padding: 5px 15px;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 14px;
-    }
-    
-    .positive-tag {
-        background-color: #e6f2ff;
-        color: #1f77b4;
-    }
-    
-    .negative-tag {
-        background-color: #ffe6e6;
-        color: #ff4b4b;
-    }
-    
-    /* 情感量表样式 */
-    .sentiment-scale {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
-        font-size: 14px;
-        color: #666;
-    }
-    
-    .scale-label {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
     }
     
     /* 修复表单刷新问题 */
