@@ -2,7 +2,7 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.layers import (Input, Embedding, Conv1D, GlobalMaxPooling1D, Dense,
-                                    Dropout, Concatenate,
+                                    Dropout, Concatenate, BatchNormalization，
                                     Bidirectional, LSTM, Multiply)
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.preprocessing.sequence import pad_sequences
