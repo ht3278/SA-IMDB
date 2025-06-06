@@ -25,7 +25,7 @@ nltk.download('punkt')
 nltk.download('punkt_tab')
 nltk.download('wordnet')
 nltk.download('stopwords')
-nltk.download('averaged_perceptron_tagger')
+nltk.download('averaged_perceptron_tagger_eng')
 stop_words = set(nltk.corpus.stopwords.words('english')) - {
     'not', 'no', 'never', 'none', 'nor', 'ain', 'aren', 'couldn', 'didn',
     'doesn', 'don', 'hadn', 'hasn', 'haven', 'isn', 'mightn', 'mustn',
