@@ -314,8 +314,8 @@ def load_model_and_tokenizer():
         model_best.load_weights(required_files['best_weights'])
         model_swa.load_weights(required_files['swa_weights'])
         
-        # model_best.compile(optimizer='adam', loss='binary_crossentropy')
-        # model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+        model_best.compile(optimizer='adam', loss='binary_crossentropy')
+        model_swa.compile(optimizer='adam', loss='binary_crossentropy')
             
         return model_best, model_swa, tokenizer
     except Exception as e:
@@ -464,25 +464,7 @@ st.markdown("""
     .expand-btn:hover {
         background-color: #e0e3e7;
     }
-    
-    /* 动画过渡 */
-    .fade-enter {
-        animation: fadeDown 0.3s ease-in-out;
-    }
-    
-    @keyframes fadeDown {
-        from {opacity: 0; transform: translateY(-10px);}
-        to {opacity: 1; transform: translateY(0);}
-    }
-    
-    .sentiment-positive {
-        border-left-color: #1f77b4;
-    }
-    
-    .sentiment-negative {
-        border-left-color: #ff4b4b;
-    }
-    
+  
     /* 按钮样式 */
     .stButton>button {
         border-radius: 50px;
