@@ -348,10 +348,7 @@ if 'show_result' not in st.session_state:
     
 if 'current_result' not in st.session_state:
     st.session_state.current_result = None
-    
-# if 'review_text' not in st.session_state:
-#     st.session_state.review_text = ""
-
+  
 # ============== 提前加载模型 ==============
 model_best, model_swa, tokenizer = load_model_and_tokenizer()
 
