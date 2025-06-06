@@ -314,8 +314,8 @@ def load_model_and_tokenizer():
         model_best.load_weights(required_files['best_weights'])
         model_swa.load_weights(required_files['swa_weights'])
         
-        model_best.compile(optimizer='adam', loss='binary_crossentropy')
-        model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+        # model_best.compile(optimizer='adam', loss='binary_crossentropy')
+        # model_swa.compile(optimizer='adam', loss='binary_crossentropy')
             
         return model_best, model_swa, tokenizer
     except Exception as e:
