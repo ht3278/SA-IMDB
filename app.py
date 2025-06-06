@@ -492,7 +492,7 @@ st.markdown("""
 <div class="title-container">
     <h1 style="margin:0; font-size:36px;">🎬 Movie Review Sentiment Analysis</h1>
     <p style="margin:10px 0 0; font-size:18px; opacity:0.9;">
-        Advanced sentiment analysis with model BILSTM+CNN+ABSA
+        Sentiment analysis with model BILSTM+CNN+Attention
     </p>
 </div>
 """, unsafe_allow_html=True)
