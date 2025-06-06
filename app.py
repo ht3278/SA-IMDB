@@ -2,8 +2,8 @@ import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.layers import (Input, Embedding, Conv1D, GlobalMaxPooling1D, Dense,
-                                    Dropout, Concatenate, BatchNormalization,
-                                    Bidirectional, LSTM, Multiply, SeparableConv1D)
+                                    Dropout, Concatenate,
+                                    Bidirectional, LSTM, Multiply)
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import re
@@ -16,8 +16,7 @@ import numpy as np
 import os
 import time
 from nltk import pos_tag
-import math
-import streamlit.components.v1 as components  
+
 # 设置页面配置必须放在最前面
 st.set_page_config(layout="wide", page_title="Movie Review Sentiment Analysis")
 
@@ -315,10 +314,7 @@ def load_model_and_tokenizer():
         
         model_best.load_weights(required_files['best_weights'])
         model_swa.load_weights(required_files['swa_weights'])
-        
-        model_best.compile(optimizer='adam', loss='binary_crossentropy')
-        model_swa.compile(optimizer='adam', loss='binary_crossentropy')
-            
+ 
         return model_best, model_swa, tokenizer
     except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
@@ -351,8 +347,6 @@ if 'show_result' not in st.session_state:
 if 'current_result' not in st.session_state:
     st.session_state.current_result = None
     
-if 'review_text' not in st.session_state:
-    st.session_state.review_text = ""
 
 # ============== 提前加载模型 ==============
 model_best, model_swa, tokenizer = load_model_and_tokenizer()
@@ -466,25 +460,7 @@ st.markdown("""
     .expand-btn:hover {
         background-color: #e0e3e7;
     }
-    
-    /* 动画过渡 */
-    .fade-enter {
-        animation: fadeDown 0.3s ease-in-out;
-    }
-    
-    @keyframes fadeDown {
-        from {opacity: 0; transform: translateY(-10px);}
-        to {opacity: 1; transform: translateY(0);}
-    }
-    
-    .sentiment-positive {
-        border-left-color: #1f77b4;
-    }
-    
-    .sentiment-negative {
-        border-left-color: #ff4b4b;
-    }
-    
+  
     /* 按钮样式 */
     .stButton>button {
         border-radius: 50px;
