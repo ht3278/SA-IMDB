@@ -637,8 +637,7 @@ with col2:
                     <div style="margin-top:10px; font-size:14px; color:#555;">
                         {record['raw_text']}
                     </div>
-                </div>
-                """, unsafe_allow_html=True)
+                </div>""", unsafe_allow_html=True)
     else:
         st.info("No analysis history yet. Submit a review to see history here.")
     
