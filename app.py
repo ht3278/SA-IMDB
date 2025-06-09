@@ -313,7 +313,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 @st.cache_resource
 def load_model_and_tokenizer():
     required_files = {
-        'tokenizer': 'tokenizer.pkl',
+        # 'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
@@ -540,22 +540,19 @@ with col1:
     # 添加验证逻辑
     validation_error = None
     if analyze_btn and text.strip():
-        # 检查是否全数字
         if text.strip().isdigit():
             validation_error = "Review cannot contain only numbers!"
         
-        # 检查是否包含特殊字符
-        invalid_chars = set('@#￥%……&*（）')
-        found_invalid_chars = [char for char in invalid_chars if char in text]
-        if found_invalid_chars:
-            validation_error = f"Review contains invalid characters: {', '.join(found_invalid_chars)}"
+        special_chars = set('!@#$%^&*()_+-=[]{}|;:\'",.<>?/`~\\')
         
-        # 显示验证错误
+        cleaned_text = ''.join(char for char in text.strip() if char not in special_chars)
+        if not cleaned_text:
+            validation_error = "Review cannot consist entirely of special characters!"
+        
         if validation_error:
             st.error(validation_error)
             st.session_state.show_result = False
         
-        # 验证通过则进行分析
         elif model_best is None or model_swa is None or tokenizer is None:
             st.error("Models not loaded. Please check file availability.")
             st.session_state.show_result = False
