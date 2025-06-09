@@ -229,11 +229,12 @@ class AdvancedLemmatizer:
 advanced_lemmatizer = AdvancedLemmatizer()
 
 # # ============== 修复2: 模型架构与训练一致 ==============
+
 def build_bilstm_cnn_model(num_words, tokenizer):  
     input_layer = Input(shape=(MAX_SEQUENCE_LENGTH,))
     
-    # 添加ABSA特殊处理
     aspect_token_index = tokenizer.word_index.get('[ASPECT]', None)
+    
     embedding_layer = Embedding(
         input_dim=num_words,
         output_dim=EMBEDDING_DIM,
@@ -248,11 +249,12 @@ def build_bilstm_cnn_model(num_words, tokenizer):
             name='aspect_embed'
         )(tf.zeros_like(input_layer))
         
-        aspect_mask = tf.expand_dims(tf.cast(tf.equal(input_layer, aspect_token_index), -1))
+        aspect_mask = tf.expand_dims(tf.cast(tf.equal(input_layer, aspect_token_index), -1)
+        
         embedding_layer = tf.keras.layers.Add()([
             embedding_layer * (1 - tf.cast(aspect_mask, tf.float32)),
             aspect_embed * tf.cast(aspect_mask, tf.float32)
-    ])
+        ])
 
     embedding_layer = tf.keras.layers.SpatialDropout1D(0.15)(embedding_layer)
 
@@ -324,8 +326,8 @@ def load_model_and_tokenizer():
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        model_best = build_bilstm_cnn_model(num_words)
-        model_swa = build_bilstm_cnn_model(num_words)
+        model_best = build_bilstm_cnn_model(num_words, tokenizer)
+        model_swa = build_bilstm_cnn_model(num_words, tokenizer)
         
         model_best.load_weights(required_files['best_weights'])
         model_swa.load_weights(required_files['swa_weights'])
