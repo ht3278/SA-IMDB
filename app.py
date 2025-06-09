@@ -345,8 +345,17 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 #         st.error(f"Model loading failed: {str(e)}")
 #         return None, None, None
 # ============== 改进模型加载机制 ==============
+# ============== 改进模型加载机制 ==============
 @st.cache_resource
 def load_model_and_tokenizer():
+    # 定义所有必需文件
+    all_required_files = {
+        'tokenizer': 'tokenizer.pkl',
+        'best_weights': 'best_model.weights.h5',
+        'swa_weights': 'swa_model.weights.h5'
+    }
+    
+    # 实际需要的文件（不包含注释掉的部分）
     required_files = {
         'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
@@ -354,12 +363,21 @@ def load_model_and_tokenizer():
     }
     
     # 检查所有必需文件是否存在
-    missing = [f for f, path in required_files.items() if not os.path.exists(path)]
+    missing = [file_path for file_path in required_files.values() 
+               if not os.path.exists(file_path)]
+    
     if missing:
-        # 获取缺失的文件名
-        missing_names = [required_files[name] for name in missing]
-        st.error(f"Missing files: {', '.join(missing_names)}")
+        # 显示缺失的文件
+        st.error(f"Missing files: {', '.join(missing)}")
         st.error("Please ensure all required files are in the current directory")
+        
+        # 显示当前目录内容以帮助调试
+        current_files = [f for f in os.listdir() if f.endswith(('.pkl', '.h5'))]
+        if current_files:
+            st.info(f"Files found in current directory: {', '.join(current_files)}")
+        else:
+            st.warning("No .pkl or .h5 files found in current directory")
+        
         return None, None, None
     
     try:
@@ -369,23 +387,29 @@ def load_model_and_tokenizer():
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        # 构建模型
+        # 清除任何现有的Keras会话
+        tf.keras.backend.clear_session()
+        
+        # 构建主模型
         model_best = build_bilstm_cnn_model(num_words, tokenizer)
-        model_swa = build_bilstm_cnn_model(num_words, tokenizer)
-        
-        # 加载权重
         model_best.load_weights(required_files['best_weights'])
-        model_swa.load_weights(required_files['swa_weights'])
-        
-        # 编译模型
         model_best.compile(optimizer='adam', loss='binary_crossentropy')
+        
+        # 清除会话以确保两个模型独立
+        tf.keras.backend.clear_session()
+        
+        # 构建SWA模型
+        model_swa = build_bilstm_cnn_model(num_words, tokenizer)
+        model_swa.load_weights(required_files['swa_weights'])
         model_swa.compile(optimizer='adam', loss='binary_crossentropy')
             
         return model_best, model_swa, tokenizer
     except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
         import traceback
-        st.error(traceback.format_exc())  # 显示详细错误信息
+        # 显示详细的错误堆栈信息
+        st.error("Error details:")
+        st.code(traceback.format_exc())
         return None, None, None
 # ============== 预测函数（保持不变） ==============
 def predict_sentiment(text, model_best, model_swa, tokenizer):
