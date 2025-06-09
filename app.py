@@ -382,7 +382,7 @@ def load_model_and_tokenizer():
         model_swa.compile(optimizer='adam', loss='binary_crossentropy')
             
         return model_best, model_swa, tokenizer
-        except Exception as e:
+    except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
         import traceback
         st.error(traceback.format_exc())  # 显示详细错误信息
