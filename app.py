@@ -315,7 +315,7 @@ def load_model_and_tokenizer():
     required_files = {
         'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
-        # 'swa_weights': 'swa_model.weights.h5'
+        'swa_weights': 'swa_model.weights.h5'
     }
     
     missing = [f for f in required_files.values() if not os.path.exists(f)]
