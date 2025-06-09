@@ -324,7 +324,7 @@ def build_bilstm_cnn_model(num_words):
 @st.cache_resource
 def load_model_and_tokenizer():
     required_files = {
-        'tokenizer': 'tokenizer.pkl',
+        # 'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
