@@ -524,29 +524,42 @@ st.markdown("""
 # 创建两列布局
 col1, col2 = st.columns([2, 1], gap="large")
 
-# 左侧列 - 主内容区
 with col1:
-    # 使用表单封装输入区域，避免页面刷新
     with st.form(key='review_form'):
-        # 输入区域
         st.markdown('<div class="form-container">', unsafe_allow_html=True)
         st.subheader("📝 Enter Your Movie Review")
         
-        # 使用session state保存文本输入
         text = st.text_area("", height=200, 
                            placeholder="Example: This movie completely exceeded my expectations...",
                            label_visibility="collapsed",
                            value=st.session_state.get('review_text', ''),
                            key='review_text')
         
-        # 分析按钮 - 使用表单提交按钮
         analyze_btn = st.form_submit_button("🚀 Start Analysis", use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # 结果区域
+    # 添加验证逻辑
+    validation_error = None
     if analyze_btn and text.strip():
-        if model_best is None or model_swa is None or tokenizer is None:
+        # 检查是否全数字
+        if text.strip().isdigit():
+            validation_error = "Review cannot contain only numbers!"
+        
+        # 检查是否包含特殊字符
+        invalid_chars = set('@#￥%……&*（）')
+        found_invalid_chars = [char for char in invalid_chars if char in text]
+        if found_invalid_chars:
+            validation_error = f"Review contains invalid characters: {', '.join(found_invalid_chars)}"
+        
+        # 显示验证错误
+        if validation_error:
+            st.error(validation_error)
+            st.session_state.show_result = False
+        
+        # 验证通过则进行分析
+        elif model_best is None or model_swa is None or tokenizer is None:
             st.error("Models not loaded. Please check file availability.")
+            st.session_state.show_result = False
         else:
             with st.spinner("Analyzing your review..."):
                 try:
