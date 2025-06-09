@@ -350,7 +350,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 def load_model_and_tokenizer():
     # 定义所有必需文件
     all_required_files = {
-        'tokenizer': 'tokenizer.pkl',
+        # 'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
