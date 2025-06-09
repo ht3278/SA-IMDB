@@ -314,7 +314,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 def load_model_and_tokenizer():
     required_files = {
         'tokenizer': 'tokenizer1.pkl',
-        'best_weights': 'best_model.weights.h5',
+        'best_weights': 'best_model1.weights.h5',
         'swa_weights': 'swa_model1.weights.h5'
     }
     
