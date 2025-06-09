@@ -291,37 +291,81 @@ def build_bilstm_cnn_model(num_words):
 @st.cache_resource
 def load_model_and_tokenizer():
     required_files = {
-        'tokenizer': 'tokenizer.pkl',
+        # 'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
     
-    missing = [f for f in required_files.values() if not os.path.exists(f)]
+    # 详细检查每个文件的存在性
+    missing = []
+    file_details = []
+    
+    for name, fname in required_files.items():
+        if not os.path.exists(fname):
+            missing.append(fname)
+            # 添加文件描述
+            description = {
+                'tokenizer': "文本处理所需的词典文件",
+                'best_weights': "主模型权重文件",
+                'swa_weights': "辅助模型权重文件"
+            }.get(name, "未知文件")
+            file_details.append(f"{fname} ({description})")
+    
     if missing:
-        st.error(f"Missing files: {', '.join(missing)}")
-        st.error("Please ensure all required files are in the current directory")
+        # 显示详细错误信息
+        st.error("⚠️ 缺少以下关键文件：")
+        for detail in file_details:
+            st.error(f"- {detail}")
+        
+        # 显示当前目录内容（用于调试）
+        st.error(f"当前工作目录: {os.getcwd()}")
+        st.error("目录中的相关文件：")
+        found_files = [f for f in os.listdir() if f.endswith(('.pkl', '.h5'))]
+        if found_files:
+            for f in found_files:
+                st.write(f"  - {f}")
+        else:
+            st.error("  未找到任何 .pkl 或 .h5 文件")
+        
         return None, None, None
     
     try:
-        with open(required_files['tokenizer'], 'rb') as f:
-            tokenizer = pickle.load(f)
+        # 尝试加载tokenizer
+        try:
+            with open(required_files['tokenizer'], 'rb') as f:
+                tokenizer = pickle.load(f)
+        except Exception as e:
+            st.error(f"加载tokenizer失败: {str(e)}")
+            return None, None, None
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        model_best = build_bilstm_cnn_model(num_words)
-        model_swa = build_bilstm_cnn_model(num_words)
+        # 尝试加载模型
+        try:
+            model_best = build_bilstm_cnn_model(num_words)
+            model_swa = build_bilstm_cnn_model(num_words)
+            
+            model_best.load_weights(required_files['best_weights'])
+            model_swa.load_weights(required_files['swa_weights'])
+        except Exception as e:
+            st.error(f"加载模型权重失败: {str(e)}")
+            st.error("请检查权重文件是否与模型架构兼容")
+            return None, None, None
         
-        model_best.load_weights(required_files['best_weights'])
-        model_swa.load_weights(required_files['swa_weights'])
-        
-        model_best.compile(optimizer='adam', loss='binary_crossentropy')
-        model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+        try:
+            model_best.compile(optimizer='adam', loss='binary_crossentropy')
+            model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+        except Exception as e:
+            st.error(f"模型编译失败: {str(e)}")
+            return None, None, None
             
         return model_best, model_swa, tokenizer
+        
     except Exception as e:
-        st.error(f"Model loading failed: {str(e)}")
+        st.error(f"模型加载过程失败: {str(e)}")
+        import traceback
+        st.error(traceback.format_exc())  # 显示完整堆栈跟踪
         return None, None, None
-
 # ============== 预测函数（保持不变） ==============
 def predict_sentiment(text, model_best, model_swa, tokenizer):
     try:
