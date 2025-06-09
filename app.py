@@ -229,7 +229,6 @@ class AdvancedLemmatizer:
 advanced_lemmatizer = AdvancedLemmatizer()
 
 # ============== 修复2: 模型架构与训练一致 ==============
-# ============== 修复模型构建函数 ==============
 def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
     input_layer = Input(shape=(MAX_SEQUENCE_LENGTH,))
     
@@ -520,7 +519,7 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
-
+import re
 # 创建两列布局
 col1, col2 = st.columns([2, 1], gap="large")
 
