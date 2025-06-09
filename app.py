@@ -345,13 +345,12 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 #         st.error(f"Model loading failed: {str(e)}")
 #         return None, None, None
 # ============== 改进模型加载机制 ==============
-# ============== 改进模型加载机制 ==============
-# ============== 改进模型加载机制 ==============
+
 @st.cache_resource
 def load_model_and_tokenizer():
     # 定义所有必需文件
     files_to_check = [
-        ('tokenizer', 'tokenizer.pkl'),
+        # ('tokenizer', 'tokenizer.pkl'),
         ('best_weights', 'best_model.weights.h5'),
         ('swa_weights', 'swa_model.weights.h5')
     ]
