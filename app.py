@@ -309,42 +309,91 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
     model = Model(inputs=input_layer, outputs=output)
     return model
 
+# # ============== 改进模型加载机制 ==============
+# @st.cache_resource
+# def load_model_and_tokenizer():
+#     required_files = {
+#         'tokenizer': 'tokenizer.pkl',
+#         'best_weights': 'best_model.weights.h5',
+#         'swa_weights': 'swa_model.weights.h5'
+#     }
+    
+#     missing = [f for f in required_files.values() if not os.path.exists(f)]
+#     if missing:
+#         st.error(f"Missing files: {', '.join(missing)}")
+#         st.error("Please ensure all required files are in the current directory")
+#         return None, None, None
+    
+#     try:
+#         with open(required_files['tokenizer'], 'rb') as f:
+#             tokenizer = pickle.load(f)
+        
+#         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
+        
+#         # 修复: 传递两个参数给模型构建函数
+#         model_best = build_bilstm_cnn_model(num_words, tokenizer)  # 添加tokenizer参数
+#         model_swa = build_bilstm_cnn_model(num_words, tokenizer)   # 添加tokenizer参数
+        
+#         model_best.load_weights(required_files['best_weights'])
+#         model_swa.load_weights(required_files['swa_weights'])
+        
+#         model_best.compile(optimizer='adam', loss='binary_crossentropy')
+#         model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+            
+#         return model_best, model_swa, tokenizer
+#     except Exception as e:
+#         st.error(f"Model loading failed: {str(e)}")
+#         return None, None, None
 # ============== 改进模型加载机制 ==============
 @st.cache_resource
 def load_model_and_tokenizer():
-    required_files = {
-        'tokenizer': 'tokenizer.pkl',
-        'best_weights': 'best_model.weights.h5',
-        'swa_weights': 'swa_model.weights.h5'
-    }
+    # 分别检查每个文件的存在性
+    tokenizer_file = 'tokenizer.pkl'
+    best_weights_file = 'best_model.weights.h5'
+    swa_weights_file = 'swa_model.weights.h5'
     
-    missing = [f for f in required_files.values() if not os.path.exists(f)]
-    if missing:
-        st.error(f"Missing files: {', '.join(missing)}")
-        st.error("Please ensure all required files are in the current directory")
+    tokenizer = None
+    model_best = None
+    model_swa = None
+    
+    # 1. 检查并加载tokenizer
+    if not os.path.exists(tokenizer_file):
+        st.error(f"Warning : {tokenizer_file} - missing file")
         return None, None, None
     
     try:
-        with open(required_files['tokenizer'], 'rb') as f:
+        with open(tokenizer_file, 'rb') as f:
             tokenizer = pickle.load(f)
-        
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
-        
-        # 修复: 传递两个参数给模型构建函数
-        model_best = build_bilstm_cnn_model(num_words, tokenizer)  # 添加tokenizer参数
-        model_swa = build_bilstm_cnn_model(num_words, tokenizer)   # 添加tokenizer参数
-        
-        model_best.load_weights(required_files['best_weights'])
-        model_swa.load_weights(required_files['swa_weights'])
-        
-        model_best.compile(optimizer='adam', loss='binary_crossentropy')
-        model_swa.compile(optimizer='adam', loss='binary_crossentropy')
-            
-        return model_best, model_swa, tokenizer
     except Exception as e:
-        st.error(f"Model loading failed: {str(e)}")
+        st.error(f"load tokenizer fail: {str(e)}")
         return None, None, None
-
+    
+    # 2. 检查并加载best_weights模型
+    if os.path.exists(best_weights_file):
+        try:
+            model_best = build_bilstm_cnn_model(num_words, tokenizer)
+            model_best.load_weights(best_weights_file)
+            model_best.compile(optimizer='adam', loss='binary_crossentropy')
+        except Exception as e:
+            st.error(f"load best_model fail: {str(e)}")
+            model_best = None
+    else:
+        st.warning(f"Warning: {best_weights_file} missing file，skip best_model loading")
+    
+    # 3. 检查并加载swa_weights模型
+    if os.path.exists(swa_weights_file):
+        try:
+            model_swa = build_bilstm_cnn_model(num_words, tokenizer)
+            model_swa.load_weights(swa_weights_file)
+            model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+        except Exception as e:
+            st.error(f"load swa_model fail: {str(e)}")
+            model_swa = None
+    else:
+        st.warning(f"Warning: {swa_weights_file} missing file，skip best_model loading")
+    
+    return model_best, model_swa, tokenizer
 # ============== 预测函数（保持不变） ==============
 def predict_sentiment(text, model_best, model_swa, tokenizer):
     try:
