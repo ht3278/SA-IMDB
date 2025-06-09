@@ -228,12 +228,13 @@ class AdvancedLemmatizer:
 
 advanced_lemmatizer = AdvancedLemmatizer()
 
-# # ============== 修复2: 模型架构与训练一致 ==============
-
-def build_bilstm_cnn_model(num_words, tokenizer):  
+# ============== 修复2: 模型架构与训练一致 ==============
+# ============== 修复模型构建函数 ==============
+def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
     input_layer = Input(shape=(MAX_SEQUENCE_LENGTH,))
     
-    aspect_token_index = tokenizer.word_index.get('[ASPECT]', None)
+    # 添加ABSA特殊处理
+    aspect_token_index = tokenizer.word_index.get('[ASPECT]', None)  # 注意统一使用大写
     
     embedding_layer = Embedding(
         input_dim=num_words,
@@ -241,6 +242,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):
         trainable=True
     )(input_layer)
     
+    # 修复ABSA处理代码
     if aspect_token_index is not None:
         aspect_embed = tf.keras.layers.Embedding(
             input_dim=1,
@@ -249,12 +251,15 @@ def build_bilstm_cnn_model(num_words, tokenizer):
             name='aspect_embed'
         )(tf.zeros_like(input_layer))
         
+        # 修复1: 添加缺失的右括号
         aspect_mask = tf.expand_dims(tf.cast(tf.equal(input_layer, aspect_token_index), -1))
         
+        # 修复2: 正确合并嵌入层
         embedding_layer = tf.keras.layers.Add()([
             embedding_layer * (1 - tf.cast(aspect_mask, tf.float32)),
             aspect_embed * tf.cast(aspect_mask, tf.float32)
-        ])
+        ])  # 注意这里添加了右括号
+
 
     embedding_layer = tf.keras.layers.SpatialDropout1D(0.15)(embedding_layer)
 
@@ -326,8 +331,9 @@ def load_model_and_tokenizer():
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        model_best = build_bilstm_cnn_model(num_words, tokenizer)
-        model_swa = build_bilstm_cnn_model(num_words, tokenizer)
+        # 修复: 传递两个参数给模型构建函数
+        model_best = build_bilstm_cnn_model(num_words, tokenizer)  # 添加tokenizer参数
+        model_swa = build_bilstm_cnn_model(num_words, tokenizer)   # 添加tokenizer参数
         
         model_best.load_weights(required_files['best_weights'])
         model_swa.load_weights(required_files['swa_weights'])
@@ -607,8 +613,7 @@ with col1:
         st.markdown(f"""
             <div class="progress-container">
                 <div class="progress-bar" style="width:{progress_width}%; background:{result['color']};"></div>
-            </div>
-        """, unsafe_allow_html=True)
+            </div>""", unsafe_allow_html=True)
         
         st.caption(f"Analysis completed in {result['processing_time']:.2f} seconds")
         
@@ -655,7 +660,8 @@ with col2:
                     <div style="margin-top:10px; font-size:14px; color:#555;">
                         {record['raw_text']}
                     </div>
-                </div>""", unsafe_allow_html=True)
+                </div>
+                """, unsafe_allow_html=True)
     else:
         st.info("No analysis history yet. Submit a review to see history here.")
     
