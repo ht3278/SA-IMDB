@@ -345,20 +345,21 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 #         st.error(f"Model loading failed: {str(e)}")
 #         return None, None, None
 # ============== 改进模型加载机制 ==============
+# ============== 改进模型加载机制 ==============
 @st.cache_resource
 def load_model_and_tokenizer():
-    # 分别检查每个文件的存在性
+    # 使用变量名定义文件路径，避免重复字符串
     tokenizer_file = 'tokenizer.pkl'
     best_weights_file = 'best_model.weights.h5'
-    swa_weights_file = 'swa_model1.weights.h5'
+    swa_weights_file = 'swa_model.weights.h5'  # 修正文件名
     
     tokenizer = None
     model_best = None
     model_swa = None
     
-    # 1. 检查并加载tokenizer
+    # 1. 检查并加载tokenizer（关键文件）
     if not os.path.exists(tokenizer_file):
-        st.error(f"Warning : {tokenizer_file} - missing file")
+        st.error(f"关键文件缺失: {tokenizer_file} - 请确保文件存在于当前目录")
         return None, None, None
     
     try:
@@ -366,7 +367,7 @@ def load_model_and_tokenizer():
             tokenizer = pickle.load(f)
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
     except Exception as e:
-        st.error(f"load tokenizer fail: {str(e)}")
+        st.error(f"加载tokenizer失败: {str(e)}")
         return None, None, None
     
     # 2. 检查并加载best_weights模型
@@ -376,22 +377,24 @@ def load_model_and_tokenizer():
             model_best.load_weights(best_weights_file)
             model_best.compile(optimizer='adam', loss='binary_crossentropy')
         except Exception as e:
-            st.error(f"load best_model fail: {str(e)}")
+            st.error(f"加载best_model失败: {str(e)}")
             model_best = None
     else:
-        st.warning(f"Warning: {best_weights_file} missing file，skip best_model loading")
+        # 修正：使用变量而非字符串字面量
+        st.warning(f"注意: {best_weights_file} 文件不存在，将跳过best_model加载")
     
     # 3. 检查并加载swa_weights模型
-    if os.path.exists(swa_weights_file):
+    if os.path.exists(swa_weights_file):  # 使用变量而非字符串
         try:
             model_swa = build_bilstm_cnn_model(num_words, tokenizer)
-            model_swa.load_weights(swa_weights_file)
+            model_swa.load_weights(swa_weights_file)  # 使用变量
             model_swa.compile(optimizer='adam', loss='binary_crossentropy')
         except Exception as e:
-            st.error(f"load swa_model fail: {str(e)}")
+            st.error(f"加载swa_model失败: {str(e)}")
             model_swa = None
     else:
-        st.warning(f"Warning: {swa_weights_file} missing file，skip best_model loading")
+        # 修正消息文本和文件名引用
+        st.warning(f"注意: {swa_weights_file} 文件不存在，将跳过swa_model加载")  # 修正消息
     
     return model_best, model_swa, tokenizer
 # ============== 预测函数（保持不变） ==============
