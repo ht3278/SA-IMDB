@@ -351,13 +351,13 @@ def load_model_and_tokenizer():
     # 定义所有必需文件
     all_required_files = {
         # 'tokenizer': 'tokenizer.pkl',
-        'best_weights': 'best_model.weights.h5',
+        # 'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
     
     # 实际需要的文件（不包含注释掉的部分）
     required_files = {
-        'tokenizer': 'tokenizer.pkl',
+        # 'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
