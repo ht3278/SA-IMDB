@@ -287,44 +287,11 @@ def build_bilstm_cnn_model(num_words):
     model = Model(inputs=input_layer, outputs=output)
     return model
 
-# # ============== 改进模型加载机制 ==============
-# @st.cache_resource
-# def load_model_and_tokenizer():
-#     required_files = {
-#         'tokenizer': 'tokenizer.pkl',
-#         'best_weights': 'best_model.weights.h5',
-#         'swa_weights': 'swa_model.weights.h5'
-#     }
-    
-#     missing = [f for f in required_files.values() if not os.path.exists(f)]
-#     if missing:
-#         st.error(f"Missing files: {', '.join(missing)}")
-#         st.error("Please ensure all required files are in the current directory")
-#         return None, None, None
-    
-#     try:
-#         with open(required_files['tokenizer'], 'rb') as f:
-#             tokenizer = pickle.load(f)
-        
-#         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
-        
-#         model_best = build_bilstm_cnn_model(num_words)
-#         model_swa = build_bilstm_cnn_model(num_words)
-        
-#         model_best.load_weights(required_files['best_weights'])
-#         model_swa.load_weights(required_files['swa_weights'])
-        
-#         model_best.compile(optimizer='adam', loss='binary_crossentropy')
-#         model_swa.compile(optimizer='adam', loss='binary_crossentropy')
-            
-#         return model_best, model_swa, tokenizer
-#     except Exception as e:
-#         st.error(f"Model loading failed: {str(e)}")
-#         return None, None, None
+# ============== 改进模型加载机制 ==============
 @st.cache_resource
 def load_model_and_tokenizer():
     required_files = {
-        # 'tokenizer': 'tokenizer.pkl',
+        'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
@@ -354,6 +321,7 @@ def load_model_and_tokenizer():
     except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
         return None, None, None
+
 # ============== 预测函数（保持不变） ==============
 def predict_sentiment(text, model_best, model_swa, tokenizer):
     try:
