@@ -249,7 +249,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):
             name='aspect_embed'
         )(tf.zeros_like(input_layer))
         
-        aspect_mask = tf.expand_dims(tf.cast(tf.equal(input_layer, aspect_token_index), -1)
+        aspect_mask = tf.expand_dims(tf.cast(tf.equal(input_layer, aspect_token_index), -1))
         
         embedding_layer = tf.keras.layers.Add()([
             embedding_layer * (1 - tf.cast(aspect_mask, tf.float32)),
