@@ -253,12 +253,6 @@ def build_bilstm_cnn_model(num_words, tokenizer):
             embedding_layer * (1 - tf.cast(aspect_mask, tf.float32)),
             aspect_embed * tf.cast(aspect_mask, tf.float32)
     ])
- 
-    embedding_layer = Embedding(
-        input_dim=num_words,
-        output_dim=EMBEDDING_DIM,
-        trainable=True
-    )(input_layer)
 
     embedding_layer = tf.keras.layers.SpatialDropout1D(0.15)(embedding_layer)
 
