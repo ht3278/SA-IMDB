@@ -229,13 +229,11 @@ class AdvancedLemmatizer:
 advanced_lemmatizer = AdvancedLemmatizer()
 
 # # ============== 修复2: 模型架构与训练一致 ==============
-# def build_bilstm_cnn_model(num_words):
-#     input_layer = Input(shape=(MAX_SEQUENCE_LENGTH,))
-def build_bilstm_cnn_model(num_words, tokenizer):  # 添加tokenizer参数
+def build_bilstm_cnn_model(num_words, tokenizer):  
     input_layer = Input(shape=(MAX_SEQUENCE_LENGTH,))
     
     # 添加ABSA特殊处理
-    aspect_token_index = tokenizer.word_index.get('[aspect]', None)
+    aspect_token_index = tokenizer.word_index.get('[ASPECT]', None)
     embedding_layer = Embedding(
         input_dim=num_words,
         output_dim=EMBEDDING_DIM,
@@ -332,8 +330,8 @@ def load_model_and_tokenizer():
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        model_best = build_bilstm_cnn_model(num_words, tokenizer)
-        model_swa = build_bilstm_cnn_model(num_words, tokenizer)
+        model_best = build_bilstm_cnn_model(num_words)
+        model_swa = build_bilstm_cnn_model(num_words)
         
         model_best.load_weights(required_files['best_weights'])
         model_swa.load_weights(required_files['swa_weights'])
