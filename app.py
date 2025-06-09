@@ -310,96 +310,41 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
     return model
 
 # ============== 改进模型加载机制 ==============
-# @st.cache_resource
-# def load_model_and_tokenizer():
-#     required_files = {
-#         'tokenizer': 'tokenizer.pkl',
-#         'best_weights': 'best_model.weights.h5',
-#         'swa_weights': 'swa_model.weights.h5'
-#     }
-    
-#     missing = [f for f in required_files.values() if not os.path.exists(f)]
-#     if missing:
-#         st.error(f"Missing files: {', '.join(missing)}")
-#         st.error("Please ensure all required files are in the current directory")
-#         return None, None, None
-    
-#     try:
-#         with open(required_files['tokenizer'], 'rb') as f:
-#             tokenizer = pickle.load(f)
-        
-#         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
-        
-#         # 修复: 传递两个参数给模型构建函数
-#         model_best = build_bilstm_cnn_model(num_words, tokenizer)  # 添加tokenizer参数
-#         model_swa = build_bilstm_cnn_model(num_words, tokenizer)   # 添加tokenizer参数
-        
-#         model_best.load_weights(required_files['best_weights'])
-#         model_swa.load_weights(required_files['swa_weights'])
-        
-#         model_best.compile(optimizer='adam', loss='binary_crossentropy')
-#         model_swa.compile(optimizer='adam', loss='binary_crossentropy')
-            
-#         return model_best, model_swa, tokenizer
-#     except Exception as e:
-#         st.error(f"Model loading failed: {str(e)}")
-#         return None, None, None
-# ============== 改进模型加载机制 ==============
-
 @st.cache_resource
 def load_model_and_tokenizer():
-    # 定义所有必需文件
-    files_to_check = [
-        ('tokenizer', 'tokenizer.pkl'),
-        ('best_weights', 'best_model.weights.h5'),
-        # ('swa_weights', 'swa_model.weights.h5')
-    ]
+    required_files = {
+        'tokenizer': 'tokenizer.pkl',
+        'best_weights': 'best_model.weights.h5',
+        'swa_weights': 'swa_model.weights.h5'
+    }
     
-    # 检查所有必需文件是否存在
-    missing = []
-    for name, path in files_to_check:
-        if not os.path.exists(path):
-            missing.append(f"{name} ({path})")
-    
+    missing = [f for f in required_files.values() if not os.path.exists(f)]
     if missing:
         st.error(f"Missing files: {', '.join(missing)}")
         st.error("Please ensure all required files are in the current directory")
-        
-        # 显示当前目录内容以帮助调试
-        current_files = os.listdir()
-        st.info(f"Files in current directory: {', '.join(current_files)}")
-        
         return None, None, None
     
     try:
-        # 加载tokenizer
-        with open('tokenizer.pkl', 'rb') as f:
+        with open(required_files['tokenizer'], 'rb') as f:
             tokenizer = pickle.load(f)
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        # 清除任何现有的Keras会话
-        tf.keras.backend.clear_session()
+        # 修复: 传递两个参数给模型构建函数
+        model_best = build_bilstm_cnn_model(num_words, tokenizer)  # 添加tokenizer参数
+        model_swa = build_bilstm_cnn_model(num_words, tokenizer)   # 添加tokenizer参数
         
-        # 构建主模型
-        model_best = build_bilstm_cnn_model(num_words, tokenizer)
-        model_best.load_weights('best_model.weights.h5')
+        model_best.load_weights(required_files['best_weights'])
+        model_swa.load_weights(required_files['swa_weights'])
+        
         model_best.compile(optimizer='adam', loss='binary_crossentropy')
-        
-        # 清除会话以确保两个模型独立
-        tf.keras.backend.clear_session()
-        
-        # 构建SWA模型
-        model_swa = build_bilstm_cnn_model(num_words, tokenizer)
-        model_swa.load_weights('swa_model.weights.h5')
         model_swa.compile(optimizer='adam', loss='binary_crossentropy')
             
         return model_best, model_swa, tokenizer
     except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
-        import traceback
-        st.error(traceback.format_exc())
         return None, None, None
+
 # ============== 预测函数（保持不变） ==============
 def predict_sentiment(text, model_best, model_swa, tokenizer):
     try:
