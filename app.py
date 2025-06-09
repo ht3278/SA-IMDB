@@ -349,8 +349,8 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 @st.cache_resource
 def load_model_and_tokenizer():
     # 使用变量名定义文件路径，避免重复字符串
-    tokenizer_file = 'tokenizer1.pkl'
-    best_weights_file = 'best_model.weights.h5'
+    tokenizer_file = 'tokenizer.pkl'
+    best_weights_file = 'best_model2.weights.h5'
     swa_weights_file = 'swa_model.weights.h5'  # 修正文件名
     
     tokenizer = None
