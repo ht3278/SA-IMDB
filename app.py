@@ -351,8 +351,8 @@ def load_model_and_tokenizer():
     # 定义所有必需文件
     files_to_check = [
         ('tokenizer', 'tokenizer.pkl'),
-        # ('best_weights', 'best_model.weights.h5'),
-        ('swa_weights', 'swa_model.weights.h5')
+        ('best_weights', 'best_model.weights.h5'),
+        # ('swa_weights', 'swa_model.weights.h5')
     ]
     
     # 检查所有必需文件是否存在
