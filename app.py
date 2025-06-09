@@ -315,7 +315,7 @@ def load_model_and_tokenizer():
     required_files = {
         'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
-        'swa_weights': 'swa_model1.weights.h5'
+        'swa_weights': 'swa_model.weights.h5'
     }
     
     missing = [f for f in required_files.values() if not os.path.exists(f)]
@@ -344,6 +344,7 @@ def load_model_and_tokenizer():
     except Exception as e:
         st.error(f"Model loading failed: {str(e)}")
         return None, None, None
+
 
 # ============== 预测函数（保持不变） ==============
 def predict_sentiment(text, model_best, model_swa, tokenizer):
