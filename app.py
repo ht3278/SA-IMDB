@@ -288,38 +288,127 @@ def build_bilstm_cnn_model(num_words):
     return model
 
 # ============== 改进模型加载机制 ==============
+# @st.cache_resource
+# def load_model_and_tokenizer():
+#     required_files = {
+#         'tokenizer': 'tokenizer.pkl',
+#         'best_weights': 'best_model.weights.h5',
+#         'swa_weights': 'swa_model.weights.h5'
+#     }
+    
+#     missing = [f for f in required_files.values() if not os.path.exists(f)]
+#     if missing:
+#         st.error(f"Missing files: {', '.join(missing)}")
+#         st.error("Please ensure all required files are in the current directory")
+#         return None, None, None
+    
+#     try:
+#         with open(required_files['tokenizer'], 'rb') as f:
+#             tokenizer = pickle.load(f)
+        
+#         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
+        
+#         model_best = build_bilstm_cnn_model(num_words)
+#         model_swa = build_bilstm_cnn_model(num_words)
+        
+#         model_best.load_weights(required_files['best_weights'])
+#         model_swa.load_weights(required_files['swa_weights'])
+        
+#         model_best.compile(optimizer='adam', loss='binary_crossentropy')
+#         model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+            
+#         return model_best, model_swa, tokenizer
+#     except Exception as e:
+#         st.error(f"Model loading failed: {str(e)}")
+#         return None, None, None
+
+# ============== 改进模型加载机制 ==============
 @st.cache_resource
 def load_model_and_tokenizer():
+    # 先检查文件存在性而不显示错误
     required_files = {
         'tokenizer': 'tokenizer.pkl',
         'best_weights': 'best_model.weights.h5',
         'swa_weights': 'swa_model.weights.h5'
     }
     
-    missing = [f for f in required_files.values() if not os.path.exists(f)]
+    # 详细检查每个文件的存在性
+    file_status = {}
+    for name, fname in required_files.items():
+        file_status[name] = {
+            'exists': os.path.exists(fname),
+            'path': os.path.abspath(fname),
+            'description': {
+                'tokenizer': "文本处理所需的词典文件",
+                'best_weights': "主模型权重文件",
+                'swa_weights': "辅助模型权重文件"
+            }.get(name, "未知文件")
+        }
+    
+    # 在页面上显示文件状态
+    with st.expander("📁 文件状态检查", expanded=False):
+        st.subheader("模型文件状态")
+        for name, status in file_status.items():
+            col1, col2 = st.columns([1, 3])
+            col1.markdown(f"**{name}**")
+            if status['exists']:
+                col2.success(f"✅ 找到: {os.path.basename(status['path'])}")
+            else:
+                col2.error(f"❌ 缺失: {os.path.basename(status['path'])}")
+            st.caption(f"类型: {status['description']}")
+            st.caption(f"路径: {status['path']}")
+            st.divider()
+    
+    # 检查是否有文件缺失
+    missing = [name for name, status in file_status.items() if not status['exists']]
     if missing:
-        st.error(f"Missing files: {', '.join(missing)}")
-        st.error("Please ensure all required files are in the current directory")
+        st.error("⚠️ 模型初始化失败：缺少以下关键文件")
+        for name in missing:
+            st.error(f"- {required_files[name]} ({file_status[name]['description']})")
+        st.error(f"当前工作目录: {os.getcwd()}")
         return None, None, None
     
     try:
-        with open(required_files['tokenizer'], 'rb') as f:
-            tokenizer = pickle.load(f)
+        # 尝试加载tokenizer
+        try:
+            with open(required_files['tokenizer'], 'rb') as f:
+                tokenizer = pickle.load(f)
+            st.toast("✅ Tokenizer 加载成功", icon="✅")
+        except Exception as e:
+            st.error(f"加载tokenizer失败: {str(e)}")
+            st.error(f"文件路径: {os.path.abspath(required_files['tokenizer'])}")
+            return None, None, None
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        model_best = build_bilstm_cnn_model(num_words)
-        model_swa = build_bilstm_cnn_model(num_words)
+        # 尝试加载模型
+        try:
+            model_best = build_bilstm_cnn_model(num_words)
+            model_swa = build_bilstm_cnn_model(num_words)
+            
+            model_best.load_weights(required_files['best_weights'])
+            model_swa.load_weights(required_files['swa_weights'])
+            st.toast("✅ 模型权重加载成功", icon="✅")
+        except Exception as e:
+            st.error(f"加载模型权重失败: {str(e)}")
+            st.error("请检查权重文件是否与模型架构兼容")
+            return None, None, None
         
-        model_best.load_weights(required_files['best_weights'])
-        model_swa.load_weights(required_files['swa_weights'])
-        
-        model_best.compile(optimizer='adam', loss='binary_crossentropy')
-        model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+        try:
+            model_best.compile(optimizer='adam', loss='binary_crossentropy')
+            model_swa.compile(optimizer='adam', loss='binary_crossentropy')
+            st.toast("✅ 模型编译成功", icon="✅")
+        except Exception as e:
+            st.error(f"模型编译失败: {str(e)}")
+            return None, None, None
             
         return model_best, model_swa, tokenizer
+        
     except Exception as e:
-        st.error(f"Model loading failed: {str(e)}")
+        st.error(f"模型加载过程失败: {str(e)}")
+        import traceback
+        with st.expander("查看详细错误"):
+            st.code(traceback.format_exc())
         return None, None, None
 # ============== 预测函数（保持不变） ==============
 def predict_sentiment(text, model_best, model_swa, tokenizer):
