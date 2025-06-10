@@ -16,7 +16,7 @@ import numpy as np
 import os
 import time
 from nltk import pos_tag
-# 设置页面配置必须放在最前面
+# Set up webapp page
 st.set_page_config(layout="wide", page_title="Movie Review Sentiment Analysis")
 
 nltk.download('punkt')
@@ -30,13 +30,13 @@ stop_words = set(nltk.corpus.stopwords.words('english')) - {
     'needn', 'shan', 'shouldn', 'wasn', 'weren', 'won', 'wouldn','it', 'this', 'that', 'is', 'are', 'was', 'were'
 }
 
-# ============== 修复1: 使用训练一致的参数 ==============
-MAX_NB_WORDS = 25000  # 修正为训练时参数
-MAX_SEQUENCE_LENGTH = 450  # 修正为训练时参数
-FILTER_SIZES = [2, 3, 4, 5, 6]  # 修正为训练时参数
+# Same parameter with model training
+MAX_NB_WORDS = 25000  
+MAX_SEQUENCE_LENGTH = 450 
+FILTER_SIZES = [2, 3, 4, 5, 6] 
 EMBEDDING_DIM = 300
 
-# ============== 自定义层定义 (与训练代码一致) ==============
+#Attention layel
 class ChannelAttention(tf.keras.layers.Layer):
     def __init__(self, ratio=8, **kwargs):
         super(ChannelAttention, self).__init__(**kwargs)
@@ -79,7 +79,7 @@ class PositionAwareAttention(tf.keras.layers.Layer):
         a = tf.nn.softmax(pos_att, axis=1)
         return tf.reduce_sum(x * a, axis=1)
 
-# 缩写词典（保持不变）
+# Abbreviation dictionary
 contractions_dict = {
     "ain't": "are not", "aren't": "are not", "can't": "cannot", "could've": "could have", 
     "couldn't": "could not", "didn't": "did not","doesn't": "does not", "don't": "do not", 
@@ -127,27 +127,22 @@ def enhanced_negation_handling(text):
     text = re.sub(r"not_have_(\w+)", r"not have \1", text)
     return text
 
-
 def identify_aspect_terms(text):
-    """改进的方面词识别：只识别特定类型和长度的名词短语"""
     tokens = word_tokenize(text)
     tagged = pos_tag(tokens)
     aspect_terms = []
     current_chunk = []
 
-    # 只识别特定类型的名词短语
+    # Recognize only certain types of noun phrases
     for word, pos in tagged:
-        # 只考虑名词(NN)、专有名词(NNP)和名词复数(NNS)
-        if pos.startswith(('NN', 'JJ')):  # 包括形容词+名词组合
+        if pos.startswith(('NN', 'JJ')): 
             current_chunk.append(word)
         elif current_chunk:
             term = ' '.join(current_chunk)
-            # 过滤条件：至少2个字符，不是常见词
             if len(term) > 3 and term.lower() not in ['it', 'this', 'that', 'is', 'are', 'was', 'were']:
                 aspect_terms.append(term)
             current_chunk = []
 
-    # 处理最后一个块
     if current_chunk:
         term = ' '.join(current_chunk)
         if len(term) > 3 and term.lower() not in ['it', 'this', 'that']:
@@ -155,8 +150,7 @@ def identify_aspect_terms(text):
 
     return list(set(aspect_terms))
 
-
-# 数据预处理函数（保持不变）
+# Data preprocess same with the model training
 def data_processing(text):
     text = text.lower()
     text = re.sub(r"https?://\S+|www\.\S+", '', text, flags=re.MULTILINE)
@@ -179,7 +173,7 @@ def data_processing(text):
     ]
     return ' '.join(filtered)
 
-# 改进词形还原（保持不变）
+# Data AdvancedLemmatizer same with the model training
 class AdvancedLemmatizer:
     def __init__(self):
         self.lemmatizer = WordNetLemmatizer()
@@ -228,12 +222,12 @@ class AdvancedLemmatizer:
 
 advanced_lemmatizer = AdvancedLemmatizer()
 
-# ============== 修复2: 模型架构与训练一致 ==============
-def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
+# hybrid model same with the training model
+def build_bilstm_cnn_model(num_words, tokenizer): 
     input_layer = Input(shape=(MAX_SEQUENCE_LENGTH,))
     
-    # 添加ABSA特殊处理
-    aspect_token_index = tokenizer.word_index.get('[ASPECT]', None)  # 注意统一使用大写
+    # ABSA special treatment
+    aspect_token_index = tokenizer.word_index.get('[ASPECT]', None) 
     
     embedding_layer = Embedding(
         input_dim=num_words,
@@ -241,7 +235,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
         trainable=True
     )(input_layer)
     
-    # 修复ABSA处理代码
+    # Fix ABSA processing code
     if aspect_token_index is not None:
         aspect_embed = tf.keras.layers.Embedding(
             input_dim=1,
@@ -250,22 +244,19 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
             name='aspect_embed'
         )(tf.zeros_like(input_layer))
         
-        # 修复1: 添加缺失的右括号
         aspect_mask = tf.expand_dims(tf.cast(tf.equal(input_layer, aspect_token_index), -1))
         
-        # 修复2: 正确合并嵌入层
         embedding_layer = tf.keras.layers.Add()([
             embedding_layer * (1 - tf.cast(aspect_mask, tf.float32)),
             aspect_embed * tf.cast(aspect_mask, tf.float32)
-        ])  # 注意这里添加了右括号
-
+        ])  
 
     embedding_layer = tf.keras.layers.SpatialDropout1D(0.15)(embedding_layer)
 
     conv_layer = SeparableConv1D(
         256, 3, activation='relu', padding='same')(embedding_layer)
 
-    # 修正LSTM单元数为384
+    # Bilstm with unit 384
     bilstm = Bidirectional(LSTM(
         384,
         return_sequences=True,
@@ -275,7 +266,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
         activation='tanh'
     ))(conv_layer)
 
-    # 修正残差连接维度为768
+    # residual dimension 768
     residual = Conv1D(768, 1, padding='same')(conv_layer)
     bilstm = tf.keras.layers.Add()([bilstm, residual])
 
@@ -286,7 +277,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
     attention = Concatenate()(attention_heads)
 
     cnn_branches = []
-    # 修正卷积分支过滤器数为128
+    # convolution branch filters is 128
     for sz in FILTER_SIZES:
         conv = Conv1D(128, sz, activation='elu', padding='same',
                       kernel_regularizer=l2(0.003))(bilstm)
@@ -299,7 +290,7 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
     combined = BatchNormalization()(combined)
     combined = Dropout(0.5)(combined)
 
-    # 修正全连接层单元数为512
+    # connected layer units to 512
     dense = Dense(512, activation='elu', kernel_regularizer=l2(0.003))(combined)
     dense = BatchNormalization()(dense)
     dense = Dropout(0.45)(dense)
@@ -308,8 +299,8 @@ def build_bilstm_cnn_model(num_words, tokenizer):  # 接受两个参数
 
     model = Model(inputs=input_layer, outputs=output)
     return model
-
-# ============== 改进模型加载机制 ==============
+  
+# loading 
 @st.cache_resource
 def load_model_and_tokenizer():
     required_files = {
@@ -330,9 +321,8 @@ def load_model_and_tokenizer():
         
         num_words = min(MAX_NB_WORDS, len(tokenizer.word_index)) + 1
         
-        # 修复: 传递两个参数给模型构建函数
-        model_best = build_bilstm_cnn_model(num_words, tokenizer)  # 添加tokenizer参数
-        model_swa = build_bilstm_cnn_model(num_words, tokenizer)   # 添加tokenizer参数
+        model_best = build_bilstm_cnn_model(num_words, tokenizer)  
+        model_swa = build_bilstm_cnn_model(num_words, tokenizer) 
         
         model_best.load_weights(required_files['best_weights'])
         model_swa.load_weights(required_files['swa_weights'])
@@ -345,8 +335,7 @@ def load_model_and_tokenizer():
         st.error(f"Model loading failed: {str(e)}")
         return None, None, None
 
-
-# ============== 预测函数（保持不变） ==============
+# predict sentiment get from the model training
 def predict_sentiment(text, model_best, model_swa, tokenizer):
     try:
         processed = data_processing(text)
@@ -363,7 +352,7 @@ def predict_sentiment(text, model_best, model_swa, tokenizer):
         st.error(f"Prediction failed: {str(e)}")
         return 0.5, "", ""
 
-# ============== 初始化Session State ==============
+# initiate session state
 if 'history' not in st.session_state:
     st.session_state.history = []
     
@@ -372,21 +361,17 @@ if 'show_result' not in st.session_state:
     
 if 'current_result' not in st.session_state:
     st.session_state.current_result = None
-  
-# ============== 提前加载模型 ==============
+
 model_best, model_swa, tokenizer = load_model_and_tokenizer()
 
-# ============== 创建Web App界面 ==============
-# 自定义CSS样式
+# Develop web app
 st.markdown("""
 <style>
-    /* 主容器样式 */
     .main-container {
         max-width: 1200px;
         margin: 0 auto;
     }
     
-    /* 标题样式 */
     .title-container {
         background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
         border-radius: 15px;
@@ -396,7 +381,6 @@ st.markdown("""
         color: white;
     }
     
-    /* 输入框样式 */
     .input-container {
         background-color: #ffffff;
         border-radius: 15px;
@@ -405,7 +389,6 @@ st.markdown("""
         margin-bottom: 30px;
     }
     
-    /* 结果卡片样式 */
     .result-card {
         background-color: #ffffff;
         border-radius: 15px;
@@ -414,7 +397,6 @@ st.markdown("""
         margin-bottom: 30px;
     }
     
-    /* 进度条容器 */
     .progress-container { 
         position: relative; 
         height: 15px; 
@@ -424,26 +406,23 @@ st.markdown("""
         margin: 20px 0;
     }
     
-    /* 进度条 */
     .progress-bar { 
         height: 100%; 
         transition: width 0.5s ease; 
         border-radius: 10px;
     }
     
-     /* 历史记录容器增强 */
     .history-container {
         background-color: #ffffff;
         border-radius: 15px;
         padding: 18px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        position: sticky; /* 固定定位 */
-        top: 20px; /* 距离顶部距离 */
-        max-height: 80vh; /* 限制最大高度 */
-        overflow-y: auto; /* 自动添加滚动条 */
+        position: sticky; 
+        top: 20px; 
+        max-height: 80vh; 
+        overflow-y: auto;
     }
     
-    /* 历史记录项增强 */
     .history-item {
         padding: 15px;
         margin: 10px 0;
@@ -455,9 +434,8 @@ st.markdown("""
         overflow: hidden;
     }
     
-    /* 文本预览容器 */
     .history-text-preview {
-        max-height: 60px; /* 固定高度 */
+        max-height: 60px; 
         overflow-y: hidden;
         position: relative;
         margin: 10px 0;
@@ -466,7 +444,6 @@ st.markdown("""
         line-height: 1.4;
     }
     
-    /* 展开按钮样式 */
     .expand-btn {
         display: block;
         width: 100%;
@@ -486,7 +463,6 @@ st.markdown("""
         background-color: #e0e3e7;
     }
   
-    /* 按钮样式 */
     .stButton>button {
         border-radius: 50px;
         padding: 10px 25px;
@@ -499,29 +475,24 @@ st.markdown("""
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     
-    /* 修复表单刷新问题 */
     form {
         margin-bottom: 0 !important;
     }
     
    
-</style>
-""", unsafe_allow_html=True)
+</style>""", unsafe_allow_html=True)
 
-# 主容器
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-# 标题区域
 st.markdown("""
 <div class="title-container">
     <h1 style="margin:0; font-size:36px;">🎬 Movie Review Sentiment Analysis</h1>
     <p style="margin:10px 0 0; font-size:18px; opacity:0.9;">
         Sentiment analysis with model BILSTM+CNN+Attention
     </p>
-</div>
-""", unsafe_allow_html=True)
+</div>""", unsafe_allow_html=True)
 import re
-# 创建两列布局
+# Creating a two-column layout
 col1, col2 = st.columns([2, 1], gap="large")
 
 with col1:
@@ -538,7 +509,7 @@ with col1:
         analyze_btn = st.form_submit_button("🚀 Start Analysis", use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # 添加验证逻辑
+    # validation
     validation_error = None
     if analyze_btn and text.strip():
         if text.strip().isdigit():
@@ -550,10 +521,12 @@ with col1:
         if not cleaned_text:
             validation_error = "Review cannot consist entirely of special characters!"
         
+        # Display validation error
         if validation_error:
             st.error(validation_error)
             st.session_state.show_result = False
-        
+
+         # Proceed after validate
         elif model_best is None or model_swa is None or tokenizer is None:
             st.error("Models not loaded. Please check file availability.")
             st.session_state.show_result = False
@@ -603,7 +576,7 @@ with col1:
                     st.error(f"Analysis failed: {str(e)}")
                     st.session_state.show_result = False
     
-    # 显示结果
+    # display output
     if st.session_state.show_result and st.session_state.current_result:
         result = st.session_state.current_result
         st.markdown('<div class="result-card">', unsafe_allow_html=True)
@@ -643,7 +616,7 @@ with col1:
         st.write("Working directory:", os.getcwd())
         st.write("Directory files:", [f for f in os.listdir() if f.endswith(('.pkl', '.h5'))])
 
-# 替换原历史记录区域的代码如下：
+# History layel
 with col2:
     st.markdown('<div class="history-container">', unsafe_allow_html=True)
     st.subheader("📜 Analysis History")
@@ -655,11 +628,10 @@ with col2:
             reverse=True
         )
         
-        for record in history_sorted[:5]:  # 显示最多5条记录
+        for record in history_sorted[:5]:
             tag_class = "positive-tag" if "Positive" in record["sentiment"] else "negative-tag"
             tag_text = "Positive" if "Positive" in record["sentiment"] else "Negative"
-            
-            # 使用expander替代JS折叠功能
+
             with st.expander(f"{record['emoji']} {tag_text} (Confidence: {record['confidence']})"):
                 st.markdown(f"""
                 <div class="history-item fade-enter">
