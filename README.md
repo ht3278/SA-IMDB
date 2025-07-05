@@ -1,1 +1,7 @@
 # SA-IMDB
+The app requirement already put in the requirement txt
+streamlit==1.37.1
+h5py==3.11.0
+nltk==3.9.1
+tensorflow==2.19.0
+numpy==1.26.4
